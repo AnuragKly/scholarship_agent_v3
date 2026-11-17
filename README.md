@@ -5,76 +5,7 @@ in Applied Mathematics, Computational Mathematics and Data Science. It reads the
 scholarship, extracts the facts with evidence, checks eligibility criterion by criterion, and never claims anything the
 source does not say.
 
-> **Built from scratch.** The Version 2 project was not available when this was written, so this is a fresh build to the
-> same specification rather than an upgrade. See "Version 2 data" below.
-
----
-
-## 1. Setup on macOS (beginner guide)
-
-You need **Python 3.10 or newer**. Check in Terminal: `python3 --version`. If it is older or missing, install it from
-<https://www.python.org/downloads/>.
-
-### Easiest way
-
-1. Unzip the project and open the folder.
-2. Double-click **`run_app.command`** (the first time: right-click → *Open*).
-3. It creates a private Python environment, installs everything, and creates a `.env` file for you.
-4. Add your keys to `.env` (step 3 below), save, and double-click `run_app.command` again.
-5. Your browser opens the app (or go to <http://localhost:8501>).
-
-### Manual way (Terminal)
-
-```bash
-cd path/to/scholarship_agent_v3
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-open -e .env            # edit the keys, save
-streamlit run app.py
-```
-
-### 3. Add your API keys (both optional)
-
-Edit `.env`:
-
-| Key | What it does | Without it |
-|---|---|---|
-| `OPENAI_API_KEY` | AI extraction of scholarship pages | A limited heuristic fallback is used and **clearly labelled "NOT AI-verified"** |
-| `OPENAI_MODEL` | Model name (default `gpt-4o-mini`; must support Structured Outputs) | — |
-| `TAVILY_API_KEY` | Search on the Discover page | Search is disabled; you can still paste an official URL |
-
-**Costs:** OpenAI and Tavily are third-party services. Usage may incur **separate charges on your own accounts**. The
-app never shows or logs your keys, and `.env` is already in `.gitignore`.
-
-### Run the tests
-
-```bash
-pip install -r requirements-dev.txt
-python -m pytest
-```
-
-No test makes a live or paid API call; OpenAI, Tavily and the web are all mocked.
-
-### Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| `command not found: python3` | Install Python from python.org |
-| `ModuleNotFoundError` | Activate the environment (`source .venv/bin/activate`) and run `pip install -r requirements.txt` |
-| Dashboard says a key is "not set" | Check the file is named exactly `.env` (not `.env.txt`), is in the project folder, and you restarted the app |
-| "OpenAI rejected the API key" | Re-copy the key; check billing at platform.openai.com |
-| "OpenAI rejected the request… model" | Set `OPENAI_MODEL` to a model that supports Structured Outputs (e.g. `gpt-4o-mini`) |
-| "Search rate limit or quota reached" | Wait, or check your Tavily plan |
-| "Very little readable text was found" | The page needs JavaScript. Open it in your browser, copy the text, use **Paste page text** on Discover |
-| "The website refused automated access" | Same: use **Paste page text** |
-| "The app could not start" | Make sure the `data` folder is writable; set `SCHOLARSHIP_DB_PATH` in `.env` to another location |
-| Port already in use | `streamlit run app.py --server.port 8502` |
-
----
-
-## 2. How to use it
+# How to use it
 
 1. **Settings** — enter your profile (nationality, subjects, funding preference; GPA, English score, experience and age
    are optional). Empty means *unknown*: the app never assumes a value for you.
@@ -101,54 +32,7 @@ No test makes a live or paid API call; OpenAI, Tavily and the web are all mocked
 * **Privacy:** only the web page text is sent to OpenAI. Your profile (GPA, scores, age…) stays on your computer.
   Search queries sent to Tavily contain subjects, countries and nationality wording.
 
----
-
-## 3. Module guide
-
-| Module | Purpose |
-|---|---|
-| `app.py` | Streamlit entry point: navigation only |
-| `scholarship_agent/config.py` | Reads `.env`/environment, validates, never exposes secrets |
-| `utils.py` | Secret-redacting logging, URL normalisation, JSON/CSV helpers (CSV formula-injection safe) |
-| `record.py` | The one record definition + strict JSON schema + repair of malformed AI output |
-| `extraction.py` | OpenAI Responses API + Structured Outputs, prompt-injection rules, guard rails, labelled fallback, multi-source merge with conflicts |
-| `fetcher.py` | Safe HTTP fetching (scheme/private-IP/redirect/size/type checks), readable text, canonical URL, candidate links |
-| `discovery.py` | Query building (always targets Nepal applicants) + Tavily search |
-| `sources.py` | Official / third-party classification (heuristic, overridable) |
-| `eligibility.py` | CONFIRMED / NOT_MET / UNCLEAR / NOT_APPLICABLE per criterion, with evidence |
-| `subjects.py` | Subject keyword matching ("likely compatibility", not admission) |
-| `matching.py` | Transparent 0–100 score with configurable weights |
-| `deadlines.py` | Date normalisation, status (Open / Closing soon / Passed / Unknown), Nepal time |
-| `dedup.py` | Duplicate detection: normalised URL, then name/provider similarity |
-| `changes.py` | Field-level comparison of two records |
-| `migrations.py`, `database.py` | Versioned, transactional SQLite migrations (with backup) and connections |
-| `repository.py` | All parameterised SQL: opportunities, snapshots, change log, discoveries |
-| `settings.py` | Validated applicant profile and weights stored in SQLite |
-| `filters.py` | Combinable filters (unknown = own category), sorting, summary cards, CSV |
-| `pipeline.py` | Orchestration: fetch → extract → assess → score → save; source re-checks |
-| `ui/` | One file per page + shared components |
-| `scripts/migrate_db.py` | Stand-alone migration (also runs automatically on startup) |
-
----
-
-## 4. Version 2 data
-
-The Version 2 project and database were never provided, so **nothing could be tested against a real Version 2 file**.
-What exists: on startup (or via `python scripts/migrate_db.py old.db`) the migration backs up the file, renames any
-clashing old table to `legacy_<name>_v2` (never dropped) and imports rows by *commonly named* columns (title/name,
-university/provider, country, url, deadline, notes). Imported rows are marked **"Imported (V2)"**, unverified, with
-eligibility unclear. This is tested only against a *simulated* legacy table. If your real V2 file uses other column names,
-your original data is still safe in the `legacy_*_v2` table and the import can be adjusted.
-
----
-
-## 5. Feature checklist
-
-**Legend:** ✅ implemented and covered by automated tests · 🟡 partly implemented / tested only in part · ❌ not implemented
-
-**Important:** the OpenAI and Tavily integrations have **never been run against the live services** (no keys were
-available and live paid calls were out of scope). They are tested against mocks that follow the documented request/response
-shape. Expect to check the first real run yourself.
+## Feature checklist
 
 | # | Area | Status | Notes |
 |---|---|---|---|

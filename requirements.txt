@@ -1,8 +1,0 @@
-# Versions below are the minimums; the project was tested with the versions that pip resolved on 2026-11-17
-# (streamlit 1.67, openai 3.51, requests 2.34, beautifulsoup4 4.15, python-dotenv 1.2, pytest 9.2).
-streamlit>=1.50
-openai>=1.66
-requests>=2.31
-beautifulsoup4>=4.12
-python-dotenv>=1.0
-tzdata>=2024.1
