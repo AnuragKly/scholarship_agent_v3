@@ -61,7 +61,7 @@ source does not say.
 | 17 | ZIP, README, `.env.example`, `.gitignore`, migration script | ✅ | |
 | — | Scheduled/automatic re-checks, e-mail alerts, multi-user login | ❌ | Not requested |
 
----
+---a
 
 ## 6. Known limits
 
